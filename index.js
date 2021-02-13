@@ -55,7 +55,7 @@ function checkDate() {
 				let states = [];
 
 				// Replace upper limit with selectState.childNodes.length when want all states
-				for (let i = 7; i < 11; i += 2) {
+				for (let i = 19; i < 23; i += 2) {
 					states.push({ state: selectState.childNodes[i].value, index: i });
 				}
 				return states;
@@ -109,7 +109,7 @@ function checkDate() {
 								return { downloadLinks, nextURL, pageNum };
 							});
 							stateDownloadLinks = [...stateDownloadLinks, ...result.downloadLinks];
-							if (result.pageNum == -1) {
+							if (result.pageNum == -1 || result.nextURL == '') {
 								if (stateDownloadLinks.length == 0) {
 									console.log('No data for state in given date range');
 								}
