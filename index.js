@@ -54,7 +54,7 @@ function checkDate() {
 				let selectState = document.getElementById('parameterStateName');
 				let states = [];
 
-				// Replace upper limit with selectState.childNodes.length when want all states
+				// Replace lower limit with 3, upper limit with selectState.childNodes.length when want all states
 				for (let i = 19; i < 23; i += 2) {
 					states.push({ state: selectState.childNodes[i].value, index: i });
 				}
