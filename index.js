@@ -44,25 +44,35 @@ try {
 			});
 			console.log(res);
 			await page.goto(res[0]);
-			// await page.goto();
 			// await page.waitForResponse('https://reports.dbtfert.nic.in/mfmsReports/report.jsp');
-			await page.click('input[type=button]');
-			page.on('response', (response) => {
-				console.log('in');
-				const url = response.request().url();
-				console.log(url);
+			// let cookies = await page.cookies();
+
+			// The magic
+			let doc = await page.evaluate(async () => {
+				let res = await fetch('https://reports.dbtfert.nic.in/mfmsReports/report.jsp', {
+					method: 'GET',
+					credentials: 'include',
+				});
+				return await res.text();
 			});
+			console.log(doc);
+			// await page.click('input[type=button]');
+			// page.on('response', (response) => {
+			// 	console.log('in');
+			// 	const url = response.request().url();
+			// 	console.log(url);
+			// });
+			// console.log(cookies);
 
 			// Print page as pdf
 			await page.pdf({ path: './pdf/test.pdf', format: 'A4' });
 
 			// TODO: Always times out here
-			await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
 			// await page.screenshot({ path: 'example.png' });
 		});
 		// console.log(result);
-
+		await page.waitForNavigation({ waitUntil: 'networkidle2' });
 		await browser.close();
 	})();
 } catch (error) {
