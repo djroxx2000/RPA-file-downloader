@@ -20,7 +20,7 @@ if (!path.existsSync(downloadDir)) {
 		await page._client.send('Page.setDownloadBehavior', {
 			behavior: 'allow',
 			// This path must match the WORKSPACE_DIR in Step 1
-			downloadPath: __dirname + '/csv',
+			downloadPath: downloadDir,
 		});
 	} catch (error) {
 		console.log('Unable to set download directory: ', error.message);
