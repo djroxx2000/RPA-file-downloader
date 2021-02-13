@@ -5,15 +5,19 @@ console.log(__dirname);
 let downloadLinks = [];
 try {
 	(async () => {
+		// Init puppeteer instance
 		const browser = await puppeteer.launch();
 		const page = await browser.newPage();
 		await page.goto('https://reports.dbtfert.nic.in/mfmsReports/getfarmerBuyingDetail.action');
+
+		// Set default download directory
 		await page._client.send('Page.setDownloadBehavior', {
 			behavior: 'allow',
 			// This path must match the WORKSPACE_DIR in Step 1
 			downloadPath: __dirname,
 		});
 
+		// Input state, date and press submit
 		await Promise.all([
 			page.evaluate(() => {
 				let selectState = document.getElementById('parameterStateName');
@@ -26,6 +30,8 @@ try {
 			page.waitForNavigation(),
 		]).then(async () => {
 			// await page.screenshot({ path: 'example.png' });
+
+			// Get all anchor tags with more than 0 records
 			let res = await page.evaluate(() => {
 				let links = document.getElementsByTagName('a');
 				let downloadLinks = [];
@@ -46,7 +52,11 @@ try {
 				const url = response.request().url();
 				console.log(url);
 			});
+
+			// Print page as pdf
 			await page.pdf({ path: './pdf/test.pdf', format: 'A4' });
+
+			// TODO: Always times out here
 			await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
 			// await page.screenshot({ path: 'example.png' });
