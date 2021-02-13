@@ -10,46 +10,64 @@ const startLink = 'https://reports.dbtfert.nic.in/mfmsReports/getfarmerBuyingDet
 	await page.goto(startLink);
 
 	// Set default download directory
-	await page._client.send('Page.setDownloadBehavior', {
-		behavior: 'allow',
-		// This path must match the WORKSPACE_DIR in Step 1
-		downloadPath: __dirname + '/csv',
-	});
+	try {
+		await page._client.send('Page.setDownloadBehavior', {
+			behavior: 'allow',
+			// This path must match the WORKSPACE_DIR in Step 1
+			downloadPath: __dirname + '/csv',
+		});
+	} catch (error) {
+		console.log('Unable to set download directory: ', error.message);
+	}
 
 	// Input state, date and press submit
-	await Promise.all([
-		page.evaluate(() => {
-			let selectState = document.getElementById('parameterStateName');
-			selectState.childNodes[11].selected = true;
-			let currentState = selectState.childNodes[11].value;
-			document.getElementById('parameterFromDate').value = '14/01/2021';
-			return currentState;
-			// document.getElementsById('parameterToDate').value = '';
-		}),
-		page.click('input[type=submit]'),
-		page.waitForNavigation(),
-	])
-		.then(async ([currentState, _1, _2]) => {
-			// Get all anchor tags with more than 0 records
-			let res = await page.evaluate(() => {
-				let links = document.getElementsByTagName('a');
-				let downloadLinks = [];
-				for (let link of links) {
-					if (link.href.includes('retailerId') && link.innerText != '0') {
-						downloadLinks.push(link.href);
+	let states = await page.evaluate(() => {
+		let selectState = document.getElementById('parameterStateName');
+		let states = [];
+
+		// Replace 11 with selectState.childNodes.length when want all states
+		for (let i = 3; i < 11; i += 2) {
+			states.push({ state: selectState.childNodes[i].value, index: i });
+		}
+		return states;
+	});
+	for (let state of states) {
+		console.log('Downloading state data: ', state);
+		await page.goto(startLink);
+		await Promise.all([
+			page.evaluate((state) => {
+				let selectState = document.getElementById('parameterStateName');
+				selectState.childNodes[state.index].selected = true;
+				let currentState = state.state;
+				document.getElementById('parameterFromDate').value = '31/01/2021';
+				// document.getElementsById('parameterToDate').value = '01/02/2021';
+				return currentState;
+			}, state),
+			page.click('input[type=submit]'),
+			page.waitForNavigation(),
+		])
+			.then(async ([currentState, _1, _2]) => {
+				// Get all anchor tags with more than 0 records
+				let res = await page.evaluate(() => {
+					let links = document.getElementsByTagName('a');
+					let downloadLinks = [];
+					for (let link of links) {
+						if (link.href.includes('retailerId') && link.innerText != '0') {
+							downloadLinks.push(link.href);
+						}
 					}
+					return downloadLinks;
+				});
+				// console.log(res);
+				for (let link of res) {
+					await page.goto(link);
+					downloadFile(page, link, currentState, 5);
 				}
-				return downloadLinks;
+			})
+			.catch((err) => {
+				console.log('Unable to select form parameters: ', err.message);
 			});
-			// console.log(res);
-			for (let link of res) {
-				await page.goto(link);
-				downloadFile(page, link, currentState, 5);
-			}
-		})
-		.catch((err) => {
-			console.log('Unable to select form parameters: ', err.message);
-		});
+	}
 
 	try {
 		await page.waitForNavigation({ waitUntil: 'networkidle2' });
