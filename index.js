@@ -1,80 +1,126 @@
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 const path = require('path');
-console.log(__dirname);
 
-let downloadLinks = [];
-try {
-	(async () => {
-		// Init puppeteer instance
-		const browser = await puppeteer.launch();
-		const page = await browser.newPage();
-		await page.goto('https://reports.dbtfert.nic.in/mfmsReports/getfarmerBuyingDetail.action');
+const startLink = 'https://reports.dbtfert.nic.in/mfmsReports/getfarmerBuyingDetail.action';
 
-		// Set default download directory
+const downloadDir = __dirname + '/csv';
+if (!path.existsSync(downloadDir)) {
+	fs.mkdirSync(downloadDir);
+}
+
+(async () => {
+	// Init puppeteer instance
+	const browser = await puppeteer.launch();
+	const page = await browser.newPage();
+	await page.goto(startLink);
+
+	// Set default download directory
+	try {
 		await page._client.send('Page.setDownloadBehavior', {
 			behavior: 'allow',
 			// This path must match the WORKSPACE_DIR in Step 1
-			downloadPath: __dirname,
+			downloadPath: __dirname + '/csv',
 		});
+	} catch (error) {
+		console.log('Unable to set download directory: ', error.message);
+	}
 
-		// Input state, date and press submit
+	// Input state, date and press submit
+	let states = await page.evaluate(() => {
+		let selectState = document.getElementById('parameterStateName');
+		let states = [];
+
+		// Replace 11 with selectState.childNodes.length when want all states
+		for (let i = 3; i < 11; i += 2) {
+			states.push({ state: selectState.childNodes[i].value, index: i });
+		}
+		return states;
+	});
+	for (let state of states) {
+		console.log('Downloading state data: ', state);
+		await page.goto(startLink);
 		await Promise.all([
-			page.evaluate(() => {
+			page.evaluate((state) => {
 				let selectState = document.getElementById('parameterStateName');
-				selectState.childNodes[11].selected = true;
-				document.getElementById('parameterFromDate').value = '14/01/2021';
-				// document.getElementById('submit').click();
-				// return document;
-			}),
+				selectState.childNodes[state.index].selected = true;
+				let currentState = state.state;
+				document.getElementById('parameterFromDate').value = '31/01/2021';
+				// document.getElementsById('parameterToDate').value = '01/02/2021';
+				return currentState;
+			}, state),
 			page.click('input[type=submit]'),
 			page.waitForNavigation(),
-		]).then(async () => {
-			// await page.screenshot({ path: 'example.png' });
-
-			// Get all anchor tags with more than 0 records
-			let res = await page.evaluate(() => {
-				let links = document.getElementsByTagName('a');
-				let downloadLinks = [];
-				for (let link of links) {
-					if (link.href.includes('retailerId') && link.innerText != '0') {
-						downloadLinks.push(link.href);
+		])
+			.then(async ([currentState, _1, _2]) => {
+				// Get all anchor tags with more than 0 records
+				let res = await page.evaluate(() => {
+					let links = document.getElementsByTagName('a');
+					let downloadLinks = [];
+					for (let link of links) {
+						if (link.href.includes('retailerId') && link.innerText != '0') {
+							downloadLinks.push(link.href);
+						}
 					}
-				}
-				return downloadLinks;
-			});
-			console.log(res);
-			await page.goto(res[0]);
-			// await page.waitForResponse('https://reports.dbtfert.nic.in/mfmsReports/report.jsp');
-			// let cookies = await page.cookies();
-
-			// The magic
-			let doc = await page.evaluate(async () => {
-				let res = await fetch('https://reports.dbtfert.nic.in/mfmsReports/report.jsp', {
-					method: 'GET',
-					credentials: 'include',
+					return downloadLinks;
 				});
-				return await res.text();
+				// console.log(res);
+				for (let link of res) {
+					await page.goto(link);
+					downloadFile(page, link, currentState, 5);
+				}
+			})
+			.catch((err) => {
+				console.log('Unable to select form parameters: ', err.message);
 			});
-			console.log(doc);
-			// await page.click('input[type=button]');
-			// page.on('response', (response) => {
-			// 	console.log('in');
-			// 	const url = response.request().url();
-			// 	console.log(url);
-			// });
-			// console.log(cookies);
+	}
 
-			// Print page as pdf
-			await page.pdf({ path: './pdf/test.pdf', format: 'A4' });
-
-			// TODO: Always times out here
-
-			// await page.screenshot({ path: 'example.png' });
-		});
-		// console.log(result);
+	try {
 		await page.waitForNavigation({ waitUntil: 'networkidle2' });
-		await browser.close();
-	})();
-} catch (error) {
-	console.log(error);
+	} catch (error) {
+		if (error.name != 'TimeoutError') {
+			console.log(error.message);
+		}
+	}
+
+	await browser.close();
+})();
+
+async function downloadFile(page, link, currentState, retryCount) {
+	let url = new URL(link);
+	let searchParams = url.searchParams;
+	let retailerId = searchParams.get('retailerId');
+	let quantity = searchParams.get('quantity');
+	let filename = `${currentState}-${retailerId}-${quantity}.csv`;
+
+	// receive csv response as raw text
+	// credentials: include to enable cookies
+	let csvData = await page.evaluate(async () => {
+		try {
+			let res = await fetch('https://reports.dbtfert.nic.in/mfmsReports/report.jsp', {
+				method: 'GET',
+				credentials: 'include',
+			});
+			return await res.text();
+		} catch (error) {
+			console.log('Unable to fetch data: ', error.name);
+		}
+	});
+
+	fs.writeFile(`csv/${filename}`, csvData, 'utf8', function (err) {
+		if (err) {
+			if (retryCount > 0) {
+				console.log(
+					'Some error occured - file either not saved or corrupted file saved.Retrying in a while...'
+				);
+				setTimeout(() => {
+					downloadFile(page, link, currentState, retryCount - 1);
+				}, 5000);
+			} else {
+				console.log('Unable to download file after multiple attempts from', link);
+			}
+		} else {
+			console.log(`${filename} saved successfully`);
+		}
+	});
 }
