@@ -153,6 +153,9 @@ async function downloadFile(page, link, currentState, retryCount) {
 	// receive csv response as raw text
 	// credentials: include to enable cookies
 	let csvData = await page.evaluate(async () => {
+		if (document.getElementsByTagName('input').length == 0) {
+			return null;
+		}
 		try {
 			let res = await fetch('https://reports.dbtfert.nic.in/mfmsReports/report.jsp', {
 				method: 'GET',
@@ -163,6 +166,10 @@ async function downloadFile(page, link, currentState, retryCount) {
 			console.log('Unable to fetch data: ', error.name);
 		}
 	});
+
+	if (csvData == null) {
+		console.log('Link for ', filename, 'is empty');
+	}
 
 	fs.writeFile(`csv/${filename}`, csvData, 'utf8', function (err) {
 		if (err) {
