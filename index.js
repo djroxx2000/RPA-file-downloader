@@ -63,7 +63,7 @@ function checkDate() {
 				let states = [];
 
 				// Replace lower limit with 3, upper limit with selectState.childNodes.length when want all states
-				for (let i = 3; i < 11; i += 2) {
+				for (let i = 19; i < 25; i += 2) {
 					states.push({ state: selectState.childNodes[i].value, index: i });
 				}
 				return states;
@@ -207,7 +207,7 @@ async function downloadFile(page, link, currentState, retryCount) {
 	});
 
 	if (csvData == null) {
-		console.log('Link for ', filename, 'is empty');
+		console.log('Link for', filename, 'is empty');
 	}
 
 	fs.writeFile(`csv/${filename}`, csvData, 'utf8', function (err) {
