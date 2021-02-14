@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const startLink = 'https://reports.dbtfert.nic.in/mfmsReports/getfarmerBuyingDetail.action';
 
-let count = 0;
+// let count = 0;
 
 const downloadDir = __dirname + '/csv';
 if (!fs.existsSync(downloadDir)) {
@@ -225,8 +225,8 @@ async function downloadFile(page, link, currentState, retryCount) {
 				console.log('Unable to download file after multiple attempts from', link);
 			}
 		} else {
-			console.log(`${count}: ${filename} saved successfully`);
-			count++;
+			console.log(`${filename} saved successfully`);
+			// count++;
 		}
 	});
 }
