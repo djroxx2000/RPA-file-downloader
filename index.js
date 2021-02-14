@@ -37,7 +37,14 @@ function checkDate() {
 			const page = await browser.newPage();
 			const downloadPage1 = await browser.newPage();
 			const downloadPage2 = await browser.newPage();
-			await page.goto(startLink);
+			try {
+				await page.goto(startLink);
+			} catch (error) {
+				if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+					console.log('No internet connection...exiting');
+					process.exit();
+				}
+			}
 
 			// Set default download directory
 			try {
@@ -67,6 +74,9 @@ function checkDate() {
 				await Promise.all([
 					page.evaluate(
 						(state, dateFrom, dateTo) => {
+							window.addEventListener('offline', () => {
+								return 'offline';
+							});
 							let selectState = document.getElementById('parameterStateName');
 							selectState.childNodes[state.index].selected = true;
 							let currentState = state.state;
@@ -85,6 +95,9 @@ function checkDate() {
 						// Get all anchor tags with more than 0 records
 						// let stateDownloadLinks = [];
 						// let pageRepeat = false;
+						if (currentState == 'offline') {
+							console.log('Internet Connection Lost');
+						}
 						while (true) {
 							let result = await page.evaluate(() => {
 								let links = document.getElementsByTagName('a');
@@ -164,6 +177,12 @@ function checkDate() {
 }
 
 async function downloadFile(page, link, currentState, retryCount) {
+	require('dns').resolve('www.google.com', function (err) {
+		if (err) {
+			console.log('Waiting for connection...');
+		}
+	});
+
 	let url = new URL(link);
 	let searchParams = url.searchParams;
 	let retailerId = searchParams.get('retailerId');
