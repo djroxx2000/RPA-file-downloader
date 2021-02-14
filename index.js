@@ -31,11 +31,12 @@ function checkDate() {
 
 	if (pattern.test(dateFrom) && pattern.test(dateTo)) {
 		// Puppeteer stuff
-		console.log(dateFrom, dateTo);
 		(async () => {
 			// Init puppeteer instance
 			const browser = await puppeteer.launch();
 			const page = await browser.newPage();
+			const downloadPage1 = await browser.newPage();
+			const downloadPage2 = await browser.newPage();
 			await page.goto(startLink);
 
 			// Set default download directory
@@ -55,7 +56,7 @@ function checkDate() {
 				let states = [];
 
 				// Replace lower limit with 3, upper limit with selectState.childNodes.length when want all states
-				for (let i = 19; i < 23; i += 2) {
+				for (let i = 3; i < 11; i += 2) {
 					states.push({ state: selectState.childNodes[i].value, index: i });
 				}
 				return states;
@@ -82,7 +83,7 @@ function checkDate() {
 				])
 					.then(async ([currentState, _1, _2]) => {
 						// Get all anchor tags with more than 0 records
-						let stateDownloadLinks = [];
+						// let stateDownloadLinks = [];
 						// let pageRepeat = false;
 						while (true) {
 							let result = await page.evaluate(() => {
@@ -108,20 +109,39 @@ function checkDate() {
 								}
 								return { downloadLinks, nextURL, pageNum };
 							});
-							stateDownloadLinks = [...stateDownloadLinks, ...result.downloadLinks];
+							// stateDownloadLinks = [...stateDownloadLinks, ...result.downloadLinks];
+							let downCount = 0;
+							for (let link of result.downloadLinks) {
+								if (downCount % 2 == 0) {
+									try {
+										await downloadPage1.goto(link);
+									} catch (error) {
+										console.log('download page redirection error: ', error.message);
+									}
+									downloadFile(downloadPage1, link, currentState, 5);
+								} else {
+									try {
+										await downloadPage2.goto(link);
+									} catch (error) {
+										console.log('download page 2 redirection error: ', error.message);
+									}
+									downloadFile(downloadPage2, link, currentState, 5);
+								}
+								downCount++;
+							}
 							if (result.pageNum == -1 || result.nextURL == '') {
-								if (stateDownloadLinks.length == 0) {
-									console.log('No data for state in given date range');
+								if (result.downloadLinks.length == 0) {
+									console.log('No more data for state in given date range');
 								}
 								break;
 							} else {
 								await page.goto(result.nextURL);
 							}
 						}
-						for (let link of stateDownloadLinks) {
-							await page.goto(link);
-							downloadFile(page, link, currentState, 5);
-						}
+						// for (let link of stateDownloadLinks) {
+						// 	await page.goto(link);
+						// 	downloadFile(page, link, currentState, 5);
+						// }
 					})
 					.catch((err) => {
 						console.log('Unable to select form parameters: ', err.message);
