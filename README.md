@@ -6,7 +6,7 @@ This project was created as a solution for SPIT Hackathon 2021 with problem stat
 
 ## Features
 
-1. Scrapes the Government Fertilizer transactions website for links
+1. Scrapes the Government Fertilizer transactions website for links - https://reports.dbtfert.nic.in/mfmsReports/getfarmerBuyingDetail
 2. Collects the links which contain relevant data segregated by state, retailer and date
 3. Concurrently downloads data as csv files
 
