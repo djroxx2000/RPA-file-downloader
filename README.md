@@ -20,5 +20,5 @@ This project was created as a solution for SPIT Hackathon with problem statement
 
 ## Screenshots
 
-![alt text](https://github.com/djroxx2000/RPA-file-downloader/blob/master/assets/desktop_view/example1.png 'CLI Runner Demo 1')
-![alt text](https://github.com/djroxx2000/RPA-file-downloader/blob/master/assets/desktop_view/example2.png 'CLI Runner Demo 2')    
+![alt text](https://github.com/djroxx2000/RPA-file-downloader/blob/master/assets/example1.png 'CLI Runner Demo 1')
+![alt text](https://github.com/djroxx2000/RPA-file-downloader/blob/master/assets/example2.png 'CLI Runner Demo 2')    
