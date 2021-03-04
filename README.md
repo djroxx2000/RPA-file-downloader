@@ -12,7 +12,8 @@ This project was created as a solution for SPIT Hackathon 2021 with problem stat
 
 ### Install Instructions
 1. Clone the repository or download zip and unzip in a new folder
-2. Run the command "npm run start" to begin CLI interface
+2. Run the command "npm install" to install dependencies.
+3. Run the command "npm run start" to begin CLI interface
 
 ### Technology Stack
 1. Node.js
