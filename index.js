@@ -65,7 +65,7 @@ function checkDate() {
 				let states = [];
 
 				// Replace lower limit with 3, upper limit with selectState.childNodes.length when want all states
-				for (let i = 19; i < 25; i += 2) {
+				for (let i = 3; i < selectState.childNodes.length; i += 2) {
 					states.push({ state: selectState.childNodes[i].value, index: i });
 				}
 				return states;
