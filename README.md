@@ -2,7 +2,7 @@
 
 ---
  
-This project was created as a solution for SPIT Hackathon with problem statements provided by Neebal Technologies
+This project was created as a solution for SPIT Hackathon 2021 with problem statements provided by Neebal Technologies. The project score put us in top 5 out of 300 participating teams.
 
 ## Features
 
